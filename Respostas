@@ -1,0 +1,62 @@
+# Respostas da atividade — Semana 08 / Tratamento global de exceções
+
+## Parte 12 — Comparação de códigos HTTP
+
+| Situação | Status | Motivo |
+|---|---:|---|
+| Aluno inexistente | 404 Not Found | O recurso solicitado não foi localizado. |
+| DTO inválido | 400 Bad Request | Os dados enviados não passaram pela validação. |
+| Regra de negócio | 400 Bad Request | A solicitação viola uma regra definida pelo sistema (conforme padrão pedido nesta atividade). |
+| JSON inválido | 400 Bad Request | O corpo da requisição não pôde ser interpretado. |
+| Parâmetro incompatível | 400 Bad Request | O valor informado não corresponde ao tipo esperado. |
+| Erro inesperado | 500 Internal Server Error | Ocorreu uma falha não prevista no servidor. |
+
+## Parte 13 — Análise conceitual
+
+1. Qual é a diferença entre `throw new RecursoNaoEncontradoException(...)` e 404 Not Found?
+
+`throw new RecursoNaoEncontradoException(...)` lança uma exceção dentro do código Java para informar que a operação não encontrou o recurso. Já `404 Not Found` é o código HTTP enviado ao cliente da API para comunicar que o recurso solicitado não existe. O `GlobalExceptionHandler` transforma a exceção Java na resposta HTTP 404.
+
+2. Por que não é recomendado implementar try/catch em todos os Controllers?
+
+Porque isso repete código, deixa os Controllers maiores e dificulta a manutenção. Com um tratamento global, os Controllers ficam responsáveis por receber as requisições e chamar os serviços, enquanto o `GlobalExceptionHandler` centraliza a conversão das exceções em respostas HTTP.
+
+3. Qual é a função de `@RestControllerAdvice`?
+
+Permitir que uma classe trate exceções de forma centralizada para múltiplos Controllers. As respostas dos métodos dessa classe são retornadas diretamente no corpo da resposta HTTP.
+
+4. Qual é a função de `@ExceptionHandler`?
+
+Indicar qual método deve tratar determinado tipo de exceção. Por exemplo, um método anotado com `@ExceptionHandler(RecursoNaoEncontradoException.class)` trata essa exceção e pode devolver o status 404.
+
+5. Por que uma API deve possuir um padrão de resposta de erro?
+
+Para que o Front-End e outros clientes saibam como interpretar os erros de maneira previsível. Um formato único facilita mostrar mensagens, identificar campos inválidos, registrar problemas e realizar manutenção.
+
+6. Qual é a vantagem de utilizar `CampoErroDTO` no tratamento de Validation?
+
+Ele organiza cada erro em duas informações: o nome do campo e a mensagem correspondente. Assim, o Front-End consegue identificar exatamente qual campo precisa ser corrigido e apresentar a mensagem perto dele.
+
+7. Qual é a diferença entre 400 Bad Request e 404 Not Found?
+
+O 400 indica que a requisição tem dados ou parâmetros inválidos ou não atende às regras esperadas. O 404 indica que o recurso solicitado não foi encontrado. Exemplo: enviar um e-mail inválido pode gerar 400; consultar um aluno com ID inexistente gera 404.
+
+8. Em quais cenários 409 Conflict poderia ser utilizado?
+
+Quando a requisição entra em conflito com o estado atual do recurso. Exemplos: tentar cadastrar um e-mail que já está em uso, criar uma matrícula duplicada ou alterar um registro de forma incompatível com seu estado atual. Nesta atividade, o professor orientou usar 400 para a regra de negócio da matrícula duplicada.
+
+9. Por que não devemos retornar uma stack trace para o cliente?
+
+Porque ela pode revelar detalhes internos da aplicação, como nomes de classes, caminhos, consultas, estrutura do banco e informações úteis para ataques. O cliente deve receber uma mensagem controlada; os detalhes técnicos devem ficar apenas nos logs do servidor.
+
+10. Explique a diferença entre log do servidor e resposta HTTP.
+
+O log do servidor é um registro interno usado pela equipe técnica para investigar falhas e acompanhar o funcionamento da aplicação. A resposta HTTP é a informação enviada ao cliente da API, contendo o status e os dados que ele precisa conhecer. A resposta não deve expor detalhes internos registrados no log.
+
+## Parte 14 — Desafio adicional: campo `codigo`
+
+O campo `codigo` foi incluído em `ErroResponseDTO`. Cada exceção de domínio pode informar um código estável, por exemplo `ALUNO_NAO_ENCONTRADO` ou `MATRICULA_ATIVA_DUPLICADA`. Isso ajuda o Front-End a identificar o tipo de erro e executar uma ação específica sem depender da comparação de textos de mensagens, que podem ser alterados ou traduzidos.
+
+## Observação sobre os status
+
+A atividade determina 400 para regra de negócio nesta implementação. Em outras APIs, 409 Conflict também pode ser apropriado para conflitos com o estado atual do recurso; aqui foi mantido o que o enunciado solicitou.
